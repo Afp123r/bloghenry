@@ -9,6 +9,16 @@ Hi there 👋 I'm NEOH WEI JIAN 🧑‍🎓
 💼 I'm actively looking for an internship opportunity to gain hands-on experience  
 📍 Based in Malaysia
 
+---
+
+## 🔧 Skills & Technologies
+
+**Programming:** C, C++, Python, HTML, CSS, JavaScript  
+**Tools:** Visual Studio Code, Git, Quartus II, Arduino IDE, CodeBlocks, KiCad 7.0, VeeCAD, LTspice, Quartus II, Cisco Packet Tracer  
+**Interests:** Embedded Systems, Web Development, Networking
+
+---
+
 ## 🚀 What I'm Up To
 
 🌱 Currently learning: React, Node.js, and IoT concepts  
