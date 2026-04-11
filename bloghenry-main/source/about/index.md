@@ -11,7 +11,13 @@ Hi there 👋 I'm NEOH WEI JIAN 🧑‍🎓
 
 ---
 
+## 🔧 Skills & Technologies
 
+**Programming:** C, C++, Python, HTML, CSS, JavaScript  
+**Tools:** Visual Studio Code, Git, Quartus II, Arduino IDE, CodeBlocks, KiCad 7.0, VeeCAD, LTspice, Quartus II, Cisco Packet Tracer  
+**Interests:** Embedded Systems, Web Development, Networking
+
+---
 
 ## 🚀 What I'm Up To
 
