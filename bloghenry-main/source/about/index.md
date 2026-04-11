@@ -9,9 +9,6 @@ Hi there 👋 I'm NEOH WEI JIAN 🧑‍🎓
 💼 I'm actively looking for an internship opportunity to gain hands-on experience  
 📍 Based in Malaysia
 
----
-
-
 ## 🚀 What I'm Up To
 
 🌱 Currently learning: React, Node.js, and IoT concepts  
