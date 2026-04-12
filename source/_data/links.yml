@@ -13,7 +13,7 @@
       - name: Partner Link 1
         link: https://example.com
         description: Example Site Imformation
-        avatar: /images/avatar-1.jpg
+        avatar: /images/avatar-1.png
       - name: Partner Link 2
         link: https://example.com
         description: Example Site Description

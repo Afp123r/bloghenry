@@ -1,6 +1,6 @@
-- image: /images/1.jpg
-  title: Image title 1
-  description: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec euismod
+- image: /images/1f.jpg
+  title: Another 1f Image
+  description: This is another instance of the 1f.jpg image
 
 - image: /images/2.jpg
   title: Lorem ipsum 2
