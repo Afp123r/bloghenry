@@ -1,12 +1,12 @@
 info:
   # Site title
-  title: Henry's Blog
+  title: Henry's Tech Blog
   # Site subtitle
-  subtitle: Your personal blog journey.
+  subtitle: Exploring web development, AI, and emerging technologies
   # Author name
-  author: Jack
+  author: Henry
   # Site URL
-  url: https://your-domain.com
+  url: https://henrytech.blog
 # BASIC INFORMATION <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< end
 
 
@@ -83,7 +83,11 @@ global:
   open_graph:
     enable: true
     image: /images/og.webp  # default og:image
-    description: This is your blog.
+    description: A personal tech blog sharing insights on web development, artificial intelligence, programming tutorials, and the latest in technology trends.
+    type: website
+    site_name: Henry's Tech Blog
+    twitter_card: summary_large_image
+    twitter_image: /images/og.webp
   # Google Analytics
   google_analytics:
     enable: false # Whether to enable Google Analytics

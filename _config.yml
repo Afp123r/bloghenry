@@ -3,17 +3,17 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
-subtitle: ''
-description: ''
-keywords:
-author: John Doe
+title: Henry's Tech Blog
+subtitle: Exploring web development, AI, and emerging technologies
+description: A personal tech blog sharing insights on web development, artificial intelligence, programming tutorials, and the latest in technology trends. Join me on a journey through code and innovation.
+keywords: web development, programming, AI, artificial intelligence, JavaScript, React, Node.js, tech blog, coding tutorials, technology trends, software development, Henry's blog
+author: Henry
 language: en
-timezone: ''
+timezone: 'Asia/Shanghai'
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
-url: http://example.com
+url: https://henrytech.blog
 permalink: :title/
 permalink_defaults:
 pretty_urls:
@@ -72,6 +72,24 @@ tag_map:
 # Metadata elements
 ## https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
 meta_generator: true
+
+# SEO Optimization
+sitemap:
+  path: sitemap.xml
+  rel: false
+  tags: true
+  categories: true
+
+# RSS Feed
+feed:
+  type: atom
+  2:
+    enable: true
+    icon: icon.png
+    limit: 20
+
+# Robots.txt
+robots_txt: true
 
 # Date / Time format
 ## Hexo uses Moment.js to parse and display date

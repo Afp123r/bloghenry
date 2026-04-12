@@ -1,25 +1,25 @@
-- links_category: This is the first categrory
+- links_category: Tech Blogs & Resources
   has_thumbnail: true
   list:
-      - name: Henry's Blog
-        link: https://example.com
-        description: I will refresh my article every day.
+      - name: Henry's Tech Blog
+        link: https://henrytech.blog
+        description: Exploring web development, AI, and emerging technologies through practical tutorials and insights.
         avatar: /images/avatar-0.jpg
-        thumbnail: /images/desc-image.jpg # has_thumbnail 为 true 时才需要
+        thumbnail: /images/desc-image.jpg
  
-- links_category: This is the second categrory
+- links_category: Developer Tools & Communities
   has_thumbnail: false
   list:
-      - name: Partner Link 1
-        link: https://example.com
-        description: Example Site Imformation
-        avatar: /images/avatar-1.png
-      - name: Partner Link 2
-        link: https://example.com
-        description: Example Site Description
+      - name: GitHub
+        link: https://github.com
+        description: Where the world builds software - collaborate on millions of open source projects.
+        avatar: /images/avatar-0.jpg
+      - name: Stack Overflow
+        link: https://stackoverflow.com
+        description: Empowering developers to share knowledge and build the future of technology.
         avatar: /images/avatar-2.png
-      - name: Partner Link 3
-        link: https://example.com
-        description: Example Site Description
+      - name: MDN Web Docs
+        link: https://developer.mozilla.org
+        description: Comprehensive resources for web developers including HTML, CSS, and JavaScript documentation.
         avatar: /images/avatar-3.png
  

@@ -1,6 +1,8 @@
 /* main function */
 import initUtils from "./utils.js";
 import initTyped from "./plugins/typed.js";
+import initAnimations from "./plugins/animations.js";
+import initSocialShare from "./plugins/social-share.js";
 import initModeToggle from "./tools/lightDarkSwitch.js";
 import initLazyLoad from "./layouts/lazyload.js";
 import initScrollTopBottom from "./tools/scrollTopBottom.js";
@@ -50,6 +52,8 @@ export const main = {
   },
   refresh: () => {
     initUtils();
+    initAnimations();
+    initSocialShare();
     initModeToggle();
     initScrollTopBottom();
     initBookmarkNav();

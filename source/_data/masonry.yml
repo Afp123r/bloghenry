@@ -1,31 +1,31 @@
 - image: /images/1f.jpg
-  title: Another 1f Image
-  description: This is another instance of the 1f.jpg image
+  title: My Creative Workspace
+  description: A glimpse into my development environment where ideas come to life
 
 - image: /images/2.jpg
-  title: Lorem ipsum 2
-  description: Lorem ipsum dolor sit amet
+  title: Digital Art Collection
+  description: Exploring the intersection of technology and creativity through visual storytelling
 
 - image: /images/3.jpg
-  title: Lorem ipsum 3
-  description: Lorem ipsum dolor sit amet
+  title: Code & Coffee
+  description: Where programming meets productivity - the perfect developer's morning ritual
 
 - image: /images/4.jpg
-  title: Lorem ipsum 4
-  description: Lorem ipsum dolor sit amet
+  title: Tech Innovation Hub
+  description: Showcasing the latest in cutting-edge technology and digital solutions
 
 - image: /images/5.webp
-  title: Lorem ipsum 5
-  description: Lorem ipsum dolor sit amet
+  title: Web Development Journey
+  description: From concept to deployment - the complete web development lifecycle
 
 - image: /images/6.jpg
-  title: Lorem ipsum 6
-  description: Lorem ipsum dolor sit amet
+  title: Modern UI/UX Design
+  description: Creating beautiful, intuitive interfaces that users love to interact with
 
 - image: /images/7.png
-  title: Lorem ipsum 7
-  description: Lorem ipsum dolor sit amet
+  title: Cloud Computing Solutions
+  description: Leveraging the power of cloud technologies for scalable applications
 
 - image: /images/8.jpg
-  title: Lorem ipsum 8
-  description: Lorem ipsum dolor sit amet
+  title: Future of Technology
+  description: Exploring emerging trends and the next generation of digital innovation
