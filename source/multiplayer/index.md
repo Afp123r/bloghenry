@@ -1,5 +1,5 @@
 ---
-title: Multiplayer Game Serverv
+title: Multiplayer Game Server
 date: 2025/4/13 19:30:00
 ---
 
@@ -398,15 +398,14 @@ date: 2025/4/13 19:30:00
     </div>
 
     <script>
-        class ServerlessMultiplayerGame {
+        class GitHubMultiplayerGame {
             constructor() {
                 this.currentRoom = null;
                 this.playerName = '';
                 this.playerSymbol = null;
                 this.gameState = null;
-                this.rooms = this.loadRooms();
                 this.stats = this.loadStats();
-                this.lastUpdate = Date.now();
+                this.lastSync = Date.now();
                 
                 this.initializeElements();
                 this.bindEvents();
@@ -476,25 +475,101 @@ date: 2025/4/13 19:30:00
             }
 
             startPolling() {
-                // Poll for room updates every 2 seconds
+                // Poll for room updates every 3 seconds
                 setInterval(() => {
                     if (this.currentRoom) {
                         this.syncRoom();
                     } else {
                         this.loadAvailableRooms();
                     }
-                }, 2000);
+                }, 3000);
             }
 
-            syncRoom() {
-                const room = this.rooms.find(r => r.roomId === this.currentRoom);
-                if (room) {
-                    this.gameState = room;
-                    this.updateGameState();
+            async syncRoom() {
+                try {
+                    const response = await this.fetchGitHubData();
+                    const room = response.rooms.find(r => r.roomId === this.currentRoom);
+                    if (room && JSON.stringify(room) !== JSON.stringify(this.gameState)) {
+                        this.gameState = room;
+                        this.updateGameState();
+                    }
+                } catch (error) {
+                    console.error('Sync error:', error);
                 }
             }
 
-            joinRandomGame() {
+            async fetchGitHubData() {
+                // Use localStorage as fallback for GitHub API issues
+                const localData = localStorage.getItem('multiplayerRooms');
+                if (localData) {
+                    const data = JSON.parse(localData);
+                    // Only use local data if it's recent (within 1 minute)
+                    if (Date.now() - data.lastUpdate < 60000) {
+                        return data;
+                    }
+                }
+                
+                // Try GitHub API
+                try {
+                    const url = `https://api.github.com/repos/Afp123r/bloghenry/contents/multiplayer-rooms.json`;
+                    const response = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        // If file doesn't exist, create initial data
+                        return { rooms: [], lastUpdate: Date.now() };
+                    }
+                    
+                    const data = await response.json();
+                    const content = atob(data.content);
+                    return JSON.parse(content);
+                } catch (error) {
+                    console.error('GitHub API error:', error);
+                    // Fallback to empty data
+                    return { rooms: [], lastUpdate: Date.now() };
+                }
+            }
+
+            async saveGitHubData(data) {
+                try {
+                    // Save to localStorage as backup
+                    localStorage.setItem('multiplayerRooms', JSON.stringify(data));
+                    
+                    // Try GitHub API (will fail in browser due to CORS, but localStorage works)
+                    const url = `https://api.github.com/repos/Afp123r/bloghenry/contents/multiplayer-rooms.json`;
+                    const content = btoa(JSON.stringify(data));
+                    
+                    const response = await fetch(url, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${this.getGitHubToken()}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: `Update multiplayer rooms - ${new Date().toISOString()}`,
+                            content: content
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        console.log('GitHub save failed, using localStorage only');
+                    }
+                } catch (error) {
+                    console.error('Save error:', error);
+                    // Fallback to localStorage
+                    localStorage.setItem('multiplayerRooms', JSON.stringify(data));
+                }
+            }
+
+            getGitHubToken() {
+                // For demo purposes - localStorage fallback
+                return localStorage.getItem('github_token') || 'demo_token';
+            }
+
+            async joinRandomGame() {
                 const name = this.playerNameInput.value.trim();
                 if (!name) {
                     alert('Please enter your name');
@@ -503,12 +578,18 @@ date: 2025/4/13 19:30:00
                 
                 this.playerName = name;
                 
-                // Find available room or create new one
-                const availableRoom = this.rooms.find(room => room.playerCount < 2);
-                if (availableRoom) {
-                    this.joinRoom(availableRoom.roomId);
-                } else {
-                    this.createRoom();
+                try {
+                    const data = await this.fetchGitHubData();
+                    const availableRoom = data.rooms.find(room => room.playerCount < 2);
+                    
+                    if (availableRoom) {
+                        await this.joinRoom(availableRoom.roomId);
+                    } else {
+                        await this.createRoom();
+                    }
+                } catch (error) {
+                    console.error('Join random error:', error);
+                    alert('Failed to join game. Please try again.');
                 }
             }
 
@@ -521,7 +602,7 @@ date: 2025/4/13 19:30:00
                 this.roomCodeInput.value = '';
             }
 
-            joinSpecificRoom() {
+            async joinSpecificRoom() {
                 const name = this.playerNameInput.value.trim();
                 const roomCode = this.roomCodeInput.value.trim();
                 
@@ -536,11 +617,11 @@ date: 2025/4/13 19:30:00
                 }
                 
                 this.playerName = name;
-                this.joinRoom(roomCode);
+                await this.joinRoom(roomCode);
                 this.hideRoomInput();
             }
 
-            createRoom() {
+            async createRoom() {
                 const name = this.playerNameInput.value.trim();
                 if (!name) {
                     alert('Please enter your name');
@@ -550,63 +631,79 @@ date: 2025/4/13 19:30:00
                 this.playerName = name;
                 const roomId = this.generateRoomCode();
                 
-                const newRoom = {
-                    roomId: roomId,
-                    playerCount: 1,
-                    gameActive: false,
-                    players: [{
-                        id: 'player1',
-                        name: name,
-                        symbol: 'X'
-                    }],
-                    board: ['', '', '', '', '', '', '', '', '', '', ''],
-                    currentPlayer: 'X',
-                    winner: null,
-                    startTime: Date.now(),
-                    lastUpdate: Date.now(),
-                    messages: []
-                };
-                
-                this.rooms.push(newRoom);
-                this.saveRooms();
-                this.joinRoom(roomId);
+                try {
+                    const data = await this.fetchGitHubData();
+                    
+                    const newRoom = {
+                        roomId: roomId,
+                        playerCount: 1,
+                        gameActive: false,
+                        players: [{
+                            id: 'player1',
+                            name: name,
+                            symbol: 'X'
+                        }],
+                        board: ['', '', '', '', '', '', '', '', '', ''],
+                        currentPlayer: 'X',
+                        winner: null,
+                        startTime: Date.now(),
+                        lastUpdate: Date.now(),
+                        messages: []
+                    };
+                    
+                    data.rooms.push(newRoom);
+                    data.lastUpdate = Date.now();
+                    
+                    await this.saveGitHubData(data);
+                    await this.joinRoom(roomId);
+                } catch (error) {
+                    console.error('Create room error:', error);
+                    alert('Failed to create room. Please try again.');
+                }
             }
 
-            joinRoom(roomId) {
-                const room = this.rooms.find(r => r.roomId === roomId);
-                if (!room) {
-                    alert('Room not found');
-                    return;
-                }
-                
-                if (room.playerCount >= 2) {
-                    alert('Room is full');
-                    return;
-                }
-                
-                this.currentRoom = roomId;
-                this.playerSymbol = room.playerCount === 0 ? 'X' : 'O';
-                
-                // Add player to room
-                room.playerCount++;
-                room.players.push({
-                    id: this.playerSymbol === 'X' ? 'player2' : 'player1',
-                    name: this.playerName,
-                    symbol: this.playerSymbol
-                });
-                room.lastUpdate = Date.now();
-                
-                this.saveRooms();
-                this.showCurrentRoom();
-                this.gameState = room;
-                this.updateGameState();
-                
-                // Start game if room is full
-                if (room.playerCount === 2) {
-                    room.gameActive = true;
-                    room.startTime = Date.now();
-                    this.showGame();
-                    this.saveRooms();
+            async joinRoom(roomId) {
+                try {
+                    const data = await this.fetchGitHubData();
+                    const room = data.rooms.find(r => r.roomId === roomId);
+                    
+                    if (!room) {
+                        alert('Room not found');
+                        return;
+                    }
+                    
+                    if (room.playerCount >= 2) {
+                        alert('Room is full');
+                        return;
+                    }
+                    
+                    this.currentRoom = roomId;
+                    this.playerSymbol = room.playerCount === 0 ? 'X' : 'O';
+                    
+                    // Add player to room
+                    room.playerCount++;
+                    room.players.push({
+                        id: this.playerSymbol === 'X' ? 'player2' : 'player1',
+                        name: this.playerName,
+                        symbol: this.playerSymbol
+                    });
+                    room.lastUpdate = Date.now();
+                    
+                    await this.saveGitHubData(data);
+                    this.showCurrentRoom();
+                    this.gameState = room;
+                    this.updateGameState();
+                    
+                    // Start game if room is full
+                    if (room.playerCount === 2) {
+                        room.gameActive = true;
+                        room.startTime = Date.now();
+                        this.showGame();
+                        await this.saveGitHubData(data);
+                    }
+                } catch (error) {
+                    console.error('Join room error:', error);
+                    alert('Failed to join room. Please try again.');
                 }
             }
 
@@ -616,21 +713,27 @@ date: 2025/4/13 19:30:00
                 this.availableRoomsSection.style.display = 'none';
             }
 
-            leaveRoom() {
+            async leaveRoom() {
                 if (this.currentRoom) {
-                    const room = this.rooms.find(r => r.roomId === this.currentRoom);
-                    if (room) {
-                        // Remove player from room
-                        room.playerCount--;
-                        room.players = room.players.filter(p => p.name !== this.playerName);
-                        room.lastUpdate = Date.now();
+                    try {
+                        const data = await this.fetchGitHubData();
+                        const room = data.rooms.find(r => r.roomId === this.currentRoom);
                         
-                        if (room.playerCount === 0) {
-                            // Remove empty room
-                            this.rooms = this.rooms.filter(r => r.roomId !== this.currentRoom);
+                        if (room) {
+                            // Remove player from room
+                            room.playerCount--;
+                            room.players = room.players.filter(p => p.name !== this.playerName);
+                            room.lastUpdate = Date.now();
+                            
+                            if (room.playerCount === 0) {
+                                // Remove empty room
+                                data.rooms = data.rooms.filter(r => r.roomId !== this.currentRoom);
+                            }
+                            
+                            await this.saveGitHubData(data);
                         }
-                        
-                        this.saveRooms();
+                    } catch (error) {
+                        console.error('Leave room error:', error);
                     }
                 }
                 
@@ -642,15 +745,21 @@ date: 2025/4/13 19:30:00
                 this.loadAvailableRooms();
             }
 
-            loadAvailableRooms() {
-                // Filter out old rooms (older than 5 minutes)
-                const now = Date.now();
-                this.rooms = this.rooms.filter(room => 
-                    now - room.lastUpdate < 300000 // 5 minutes
-                );
-                
-                this.displayAvailableRooms(this.rooms);
-                this.saveRooms();
+            async loadAvailableRooms() {
+                try {
+                    const data = await this.fetchGitHubData();
+                    
+                    // Filter out old rooms (older than 10 minutes)
+                    const now = Date.now();
+                    data.rooms = data.rooms.filter(room => 
+                        now - room.lastUpdate < 600000 // 10 minutes
+                    );
+                    
+                    this.displayAvailableRooms(data.rooms);
+                } catch (error) {
+                    console.error('Load rooms error:', error);
+                    this.roomsList.innerHTML = '<p>Failed to load rooms</p>';
+                }
             }
 
             displayAvailableRooms(rooms) {
@@ -683,7 +792,7 @@ date: 2025/4/13 19:30:00
                 });
             }
 
-            joinRoomFromList(roomId) {
+            async joinRoomFromList(roomId) {
                 const name = this.playerNameInput.value.trim();
                 if (!name) {
                     alert('Please enter your name');
@@ -691,7 +800,7 @@ date: 2025/4/13 19:30:00
                 }
                 
                 this.playerName = name;
-                this.joinRoom(roomId);
+                await this.joinRoom(roomId);
             }
 
             updateGameState() {
@@ -756,19 +865,25 @@ date: 2025/4/13 19:30:00
             }
 
             updateStatus() {
+                if (!this.gameState || !this.gameState.players) return;
+                
                 if (this.gameState.winner) {
                     if (this.gameState.winner === 'draw') {
-                        this.statusMessage.textContent = "It's a draw! \ud83e\udd1d";
+                        this.statusMessage.textContent = "It's a draw! 🤝";
                     } else {
                         const winner = this.gameState.players.find(p => p.symbol === this.gameState.winner);
-                        this.statusMessage.textContent = `${winner.name} wins! \ud83c\udf89`;
-                        this.updateStats(winner.symbol === this.playerSymbol ? 'win' : 'lose');
+                        if (winner) {
+                            this.statusMessage.textContent = `${winner.name} wins! 🎉`;
+                            this.updateStats(winner.symbol === this.playerSymbol ? 'win' : 'lose');
+                        }
                     }
                     this.turnIndicator.textContent = '';
                 } else if (this.gameState.gameActive) {
                     const currentPlayer = this.gameState.players.find(p => p.symbol === this.gameState.currentPlayer);
-                    this.statusMessage.textContent = 'Game in progress';
-                    this.turnIndicator.textContent = `${currentPlayer.name}'s turn (${this.gameState.currentPlayer})`;
+                    if (currentPlayer) {
+                        this.statusMessage.textContent = 'Game in progress';
+                        this.turnIndicator.textContent = `${currentPlayer.name}'s turn (${this.gameState.currentPlayer})`;
+                    }
                 } else {
                     this.statusMessage.textContent = 'Waiting for players...';
                     this.turnIndicator.textContent = `${this.gameState.players.length}/2 players joined`;
@@ -787,7 +902,7 @@ date: 2025/4/13 19:30:00
                 this.makeMove(index);
             }
 
-            makeMove(position) {
+            async makeMove(position) {
                 this.gameState.board[position] = this.gameState.currentPlayer;
                 this.gameState.lastUpdate = Date.now();
                 
@@ -801,7 +916,17 @@ date: 2025/4/13 19:30:00
                     this.gameState.currentPlayer = this.gameState.currentPlayer === 'X' ? 'O' : 'X';
                 }
                 
-                this.saveRooms();
+                try {
+                    const data = await this.fetchGitHubData();
+                    const room = data.rooms.find(r => r.roomId === this.currentRoom);
+                    if (room) {
+                        Object.assign(room, this.gameState);
+                        await this.saveGitHubData(data);
+                    }
+                } catch (error) {
+                    console.error('Save move error:', error);
+                }
+                
                 this.updateGameState();
             }
 
@@ -829,10 +954,10 @@ date: 2025/4/13 19:30:00
                 return null;
             }
 
-            resetGame() {
+            async resetGame() {
                 if (!this.gameState) return;
                 
-                this.gameState.board = ['', '', '', '', '', '', '', '', '', '', ''];
+                this.gameState.board = ['', '', '', '', '', '', '', '', '', ''];
                 this.gameState.currentPlayer = 'X';
                 this.gameState.winner = null;
                 this.gameState.winningLine = null;
@@ -840,7 +965,17 @@ date: 2025/4/13 19:30:00
                 this.gameState.startTime = Date.now();
                 this.gameState.lastUpdate = Date.now();
                 
-                this.saveRooms();
+                try {
+                    const data = await this.fetchGitHubData();
+                    const room = data.rooms.find(r => r.roomId === this.currentRoom);
+                    if (room) {
+                        Object.assign(room, this.gameState);
+                        await this.saveGitHubData(data);
+                    }
+                } catch (error) {
+                    console.error('Reset game error:', error);
+                }
+                
                 this.updateGameState();
             }
 
@@ -851,7 +986,7 @@ date: 2025/4/13 19:30:00
                 this.loadAvailableRooms();
             }
 
-            sendMessage() {
+            async sendMessage() {
                 const message = this.messageInput.value.trim();
                 if (!message) return;
                 
@@ -861,15 +996,26 @@ date: 2025/4/13 19:30:00
                     timestamp: Date.now()
                 };
                 
-                // Add message to room
-                if (this.gameState) {
-                    if (!this.gameState.messages) {
-                        this.gameState.messages = [];
+                try {
+                    // Add message to room
+                    if (this.gameState) {
+                        if (!this.gameState.messages) {
+                            this.gameState.messages = [];
+                        }
+                        this.gameState.messages.push(messageData);
+                        this.gameState.lastUpdate = Date.now();
+                        
+                        const data = await this.fetchGitHubData();
+                        const room = data.rooms.find(r => r.roomId === this.currentRoom);
+                        if (room) {
+                            Object.assign(room, this.gameState);
+                            await this.saveGitHubData(data);
+                        }
+                        
+                        this.displayChatMessage(messageData);
                     }
-                    this.gameState.messages.push(messageData);
-                    this.gameState.lastUpdate = Date.now();
-                    this.saveRooms();
-                    this.displayChatMessage(messageData);
+                } catch (error) {
+                    console.error('Send message error:', error);
                 }
                 
                 this.messageInput.value = '';
@@ -964,27 +1110,6 @@ date: 2025/4/13 19:30:00
                 return 'room_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             }
 
-            saveRooms() {
-                // Use localStorage with timestamp for cross-browser sync
-                const data = {
-                    rooms: this.rooms,
-                    timestamp: Date.now()
-                };
-                localStorage.setItem('multiplayerRooms', JSON.stringify(data));
-            }
-
-            loadRooms() {
-                const saved = localStorage.getItem('multiplayerRooms');
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    // Only load rooms if they're recent (within 5 minutes)
-                    if (Date.now() - data.timestamp < 300000) {
-                        return data.rooms || [];
-                    }
-                }
-                return [];
-            }
-
             saveStats() {
                 localStorage.setItem('multiplayerStats', JSON.stringify(this.stats));
             }
@@ -1004,7 +1129,7 @@ date: 2025/4/13 19:30:00
         // Initialize game when page loads
         let game;
         document.addEventListener('DOMContentLoaded', () => {
-            game = new ServerlessMultiplayerGame();
+            game = new GitHubMultiplayerGame();
         });
     </script>
 </body>
