@@ -474,7 +474,7 @@ date: 2025/4/13 19:30:00
             }
 
             connectToServer() {
-                this.socket = io('http://localhost:3001');
+                this.socket = io('https://bloghenry.edgeone.app:3001');
                 
                 this.socket.on('connect', () => {
                     console.log('Connected to game server');
@@ -567,7 +567,7 @@ date: 2025/4/13 19:30:00
             }
 
             loadAvailableRooms() {
-                fetch('http://localhost:3001/api/rooms')
+                fetch('https://bloghenry.edgeone.app:3001/api/rooms')
                     .then(response => response.json())
                     .then(rooms => {
                         this.displayAvailableRooms(rooms);
