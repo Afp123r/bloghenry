@@ -1,28 +1,40 @@
 ---
 title: Hello World
-date: 2026-04-13 16:55:00
-tags:
-  - introduction
-  - welcome
-categories:
-  - blog
+banner: "this is test page"
+cover: https://images.bauerhosting.com/empire/2024/05/01-Princess-Mononoke.jpg?ar=16%3A9&fit=crop&crop=top&auto=format&w=1440&q=80
 ---
+Welcome to [Hexo](https://hexo.io/)! This is your very first post. Check [documentation](https://hexo.io/docs/) for more info. If you get any problems when using Hexo, you can find the answer in [troubleshooting](https://hexo.io/docs/troubleshooting.html) or you can ask me on [GitHub](https://github.com/hexojs/hexo/issues).
 
-# Welcome to Henry's Tech Blog
+## Quick Start
 
-This is the first post on my tech blog where I'll be sharing insights about web development, AI, and emerging technologies.
+### Create a new post
 
-## What You'll Find Here
+``` bash
+$ hexo new "My New Post"
+```
 
-- **Web Development Tutorials**: Practical guides on modern web technologies
-- **AI Insights**: Exploring artificial intelligence and machine learning
-- **Tech Trends**: Latest developments in the tech world
-- **Code Examples**: Working code snippets and best practices
+More info: [Writing](https://hexo.io/docs/writing.html)
 
-## Getting Started
+### Run server
 
-I'm excited to share my journey through the world of technology with you. Stay tuned for more content!
+``` bash
+$ hexo server
+```
 
----
+More info: [Server](https://hexo.io/docs/server.html)
 
-*This blog is built with Hexo and the Redefine theme.*
+### Generate static files
+
+``` bash
+$ hexo generate
+```
+
+More info: [Generating](https://hexo.io/docs/generating.html)
+
+### Deploy to remote sites
+
+``` bash
+$ hexo deploy
+```
+
+More info: [Deployment](https://hexo.io/docs/one-command-deployment.html)
