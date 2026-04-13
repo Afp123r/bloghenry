@@ -76,6 +76,12 @@ const pageData = {
 		partial: "pages/masonry/masonry",
 		layout: "default",
 	},
+	multiplayer: {
+		titles: ["multiplayer", "Multiplayer"],
+		types: ["multiplayer", "Multiplayer"],
+		partial: "pages/multiplayer/multiplayer",
+		layout: "raw",
+	},
 	bookmarks: {
 		titles: [],
 		types: ["bookmarks", "bookmark", "tools"],

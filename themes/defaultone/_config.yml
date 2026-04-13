@@ -208,6 +208,12 @@ navbar:
     Album: #
       icon: fa-solid fa-image #icon
       path: /masonry/ 
+    Games: 
+      icon: fa-solid fa-gamepad #icon
+      path: /games/ 
+    Multiplayer: 
+      icon: fa-solid fa-users #icon
+      path: /multiplayer/ 
     # Categories: 
     #   icon: fa-solid fa-tags #icon
     #   path: /tags/ #Link

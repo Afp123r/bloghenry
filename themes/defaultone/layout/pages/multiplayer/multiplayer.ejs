@@ -1,0 +1,16 @@
+<div class="page-template-content markdown-body">
+	<%- page.content %>
+</div>
+
+<script>
+// Override markdown processing for multiplayer game
+document.addEventListener('DOMContentLoaded', function() {
+	const multiplayerContent = document.querySelector('.page-template-content');
+	if (multiplayerContent) {
+		// Replace escaped HTML with proper HTML
+		let content = multiplayerContent.innerHTML;
+		content = content.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+		multiplayerContent.innerHTML = content;
+	}
+});
+</script>
