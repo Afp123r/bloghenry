@@ -19,7 +19,18 @@ const images = theme.masonry;
 	<% images.forEach(function(image) { %>
 	<div class="masonry-item">
 		<div class="image-container">
-			<img src="<%- image.image %>" alt="<%- image.title %>">
+			<% 
+			const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi'];
+			const isVideo = videoExtensions.some(ext => image.image.toLowerCase().endsWith(ext));
+			%>
+			<% if (isVideo) { %>
+				<video controls muted loop autoplay preload="metadata">
+					<source src="<%- image.image %>" type="video/<%- image.image.split('.').pop().toLowerCase() %>">
+					Your browser does not support the video tag.
+				</video>
+			<% } else { %>
+				<img src="<%- image.image %>" alt="<%- image.title %>">
+			<% } %>
 			<div class="image-title"><%- image.title %></div>
 			<div class="image-description"><%- image.description %></div>
 		</div>

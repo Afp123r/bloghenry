@@ -1,6 +1,6 @@
 - image: /images/1f.jpg
   title: My Creative Workspace
-  description: Lorem ipsum dolor sit amet, consectcetur adipiscing elit. Donec euismod
+  description: A glimpse into my development environment where ideas come to life
 
 - image: /images/2.jpg
   title: Digital Art Collection
@@ -29,3 +29,7 @@
 - image: /images/8.jpg
   title: Future of Technology
   description: Exploring emerging trends and the next generation of digital innovation
+
+- image: /videos/test.mp4
+  title: Video Demo
+  description: 
