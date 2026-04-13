@@ -397,19 +397,21 @@ date: 2025/4/13 19:30:00
         </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
-        class MultiplayerGame {
+        class ServerlessMultiplayerGame {
             constructor() {
-                this.socket = null;
                 this.currentRoom = null;
                 this.playerName = '';
                 this.playerSymbol = null;
                 this.gameState = null;
+                this.rooms = this.loadRooms();
+                this.stats = this.loadStats();
+                this.lastUpdate = Date.now();
                 
                 this.initializeElements();
                 this.bindEvents();
-                this.connectToServer();
+                this.loadAvailableRooms();
+                this.startPolling();
             }
 
             initializeElements() {
@@ -473,40 +475,23 @@ date: 2025/4/13 19:30:00
                 });
             }
 
-            connectToServer() {
-                this.socket = io('https://bloghenry.edgeone.app:3001');
-                
-                this.socket.on('connect', () => {
-                    console.log('Connected to game server');
-                    this.loadAvailableRooms();
-                });
+            startPolling() {
+                // Poll for room updates every 2 seconds
+                setInterval(() => {
+                    if (this.currentRoom) {
+                        this.syncRoom();
+                    } else {
+                        this.loadAvailableRooms();
+                    }
+                }, 2000);
+            }
 
-                this.socket.on('roomJoined', (data) => {
-                    this.currentRoom = data.roomId;
-                    this.showCurrentRoom();
-                });
-
-                this.socket.on('gameState', (state) => {
-                    this.gameState = state;
+            syncRoom() {
+                const room = this.rooms.find(r => r.roomId === this.currentRoom);
+                if (room) {
+                    this.gameState = room;
                     this.updateGameState();
-                });
-
-                this.socket.on('chatMessage', (message) => {
-                    this.displayChatMessage(message);
-                });
-
-                this.socket.on('playerStats', (stats) => {
-                    this.displayStats(stats);
-                });
-
-                this.socket.on('error', (data) => {
-                    alert(data.message);
-                });
-
-                this.socket.on('disconnect', () => {
-                    alert('Disconnected from game server');
-                    this.backToLobby();
-                });
+                }
             }
 
             joinRandomGame() {
@@ -517,7 +502,14 @@ date: 2025/4/13 19:30:00
                 }
                 
                 this.playerName = name;
-                this.socket.emit('joinGame', { playerName: name });
+                
+                // Find available room or create new one
+                const availableRoom = this.rooms.find(room => room.playerCount < 2);
+                if (availableRoom) {
+                    this.joinRoom(availableRoom.roomId);
+                } else {
+                    this.createRoom();
+                }
             }
 
             showRoomInput() {
@@ -544,8 +536,78 @@ date: 2025/4/13 19:30:00
                 }
                 
                 this.playerName = name;
-                this.socket.emit('joinGame', { playerName: name, roomId: roomCode });
+                this.joinRoom(roomCode);
                 this.hideRoomInput();
+            }
+
+            createRoom() {
+                const name = this.playerNameInput.value.trim();
+                if (!name) {
+                    alert('Please enter your name');
+                    return;
+                }
+                
+                this.playerName = name;
+                const roomId = this.generateRoomCode();
+                
+                const newRoom = {
+                    roomId: roomId,
+                    playerCount: 1,
+                    gameActive: false,
+                    players: [{
+                        id: 'player1',
+                        name: name,
+                        symbol: 'X'
+                    }],
+                    board: ['', '', '', '', '', '', '', '', '', '', ''],
+                    currentPlayer: 'X',
+                    winner: null,
+                    startTime: Date.now(),
+                    lastUpdate: Date.now(),
+                    messages: []
+                };
+                
+                this.rooms.push(newRoom);
+                this.saveRooms();
+                this.joinRoom(roomId);
+            }
+
+            joinRoom(roomId) {
+                const room = this.rooms.find(r => r.roomId === roomId);
+                if (!room) {
+                    alert('Room not found');
+                    return;
+                }
+                
+                if (room.playerCount >= 2) {
+                    alert('Room is full');
+                    return;
+                }
+                
+                this.currentRoom = roomId;
+                this.playerSymbol = room.playerCount === 0 ? 'X' : 'O';
+                
+                // Add player to room
+                room.playerCount++;
+                room.players.push({
+                    id: this.playerSymbol === 'X' ? 'player2' : 'player1',
+                    name: this.playerName,
+                    symbol: this.playerSymbol
+                });
+                room.lastUpdate = Date.now();
+                
+                this.saveRooms();
+                this.showCurrentRoom();
+                this.gameState = room;
+                this.updateGameState();
+                
+                // Start game if room is full
+                if (room.playerCount === 2) {
+                    room.gameActive = true;
+                    room.startTime = Date.now();
+                    this.showGame();
+                    this.saveRooms();
+                }
             }
 
             showCurrentRoom() {
@@ -555,26 +617,40 @@ date: 2025/4/13 19:30:00
             }
 
             leaveRoom() {
-                if (this.socket) {
-                    this.socket.disconnect();
+                if (this.currentRoom) {
+                    const room = this.rooms.find(r => r.roomId === this.currentRoom);
+                    if (room) {
+                        // Remove player from room
+                        room.playerCount--;
+                        room.players = room.players.filter(p => p.name !== this.playerName);
+                        room.lastUpdate = Date.now();
+                        
+                        if (room.playerCount === 0) {
+                            // Remove empty room
+                            this.rooms = this.rooms.filter(r => r.roomId !== this.currentRoom);
+                        }
+                        
+                        this.saveRooms();
+                    }
                 }
+                
                 this.currentRoom = null;
                 this.currentRoomSection.style.display = 'none';
                 this.availableRoomsSection.style.display = 'block';
                 this.gameSection.style.display = 'none';
                 this.lobbySection.style.display = 'block';
-                this.connectToServer();
+                this.loadAvailableRooms();
             }
 
             loadAvailableRooms() {
-                fetch('https://bloghenry.edgeone.app:3001/api/rooms')
-                    .then(response => response.json())
-                    .then(rooms => {
-                        this.displayAvailableRooms(rooms);
-                    })
-                    .catch(error => {
-                        console.error('Error loading rooms:', error);
-                    });
+                // Filter out old rooms (older than 5 minutes)
+                const now = Date.now();
+                this.rooms = this.rooms.filter(room => 
+                    now - room.lastUpdate < 300000 // 5 minutes
+                );
+                
+                this.displayAvailableRooms(this.rooms);
+                this.saveRooms();
             }
 
             displayAvailableRooms(rooms) {
@@ -615,7 +691,7 @@ date: 2025/4/13 19:30:00
                 }
                 
                 this.playerName = name;
-                this.socket.emit('joinGame', { playerName: name, roomId: roomId });
+                this.joinRoom(roomId);
             }
 
             updateGameState() {
@@ -634,6 +710,9 @@ date: 2025/4/13 19:30:00
                 
                 // Update status
                 this.updateStatus();
+                
+                // Load chat messages
+                this.loadChatMessages();
             }
 
             updatePlayersList() {
@@ -643,8 +722,7 @@ date: 2025/4/13 19:30:00
                     const playerElement = document.createElement('div');
                     playerElement.className = 'player-item';
                     
-                    const isCurrentPlayer = player.id === this.socket.id;
-                    this.playerSymbol = isCurrentPlayer ? player.symbol : this.playerSymbol;
+                    const isCurrentPlayer = player.symbol === this.playerSymbol;
                     
                     playerElement.innerHTML = `
                         <span>${player.name} ${isCurrentPlayer ? '(You)' : ''}</span>
@@ -680,10 +758,11 @@ date: 2025/4/13 19:30:00
             updateStatus() {
                 if (this.gameState.winner) {
                     if (this.gameState.winner === 'draw') {
-                        this.statusMessage.textContent = "It's a draw! 🤝";
+                        this.statusMessage.textContent = "It's a draw! \ud83e\udd1d";
                     } else {
-                        const winner = this.gameState.players.find(p => p.id === this.gameState.winner.id);
-                        this.statusMessage.textContent = `${winner.name} wins! 🎉`;
+                        const winner = this.gameState.players.find(p => p.symbol === this.gameState.winner);
+                        this.statusMessage.textContent = `${winner.name} wins! \ud83c\udf89`;
+                        this.updateStats(winner.symbol === this.playerSymbol ? 'win' : 'lose');
                     }
                     this.turnIndicator.textContent = '';
                 } else if (this.gameState.gameActive) {
@@ -703,15 +782,66 @@ date: 2025/4/13 19:30:00
                 if (this.gameState.board[index] !== '') return;
                 
                 const currentPlayer = this.gameState.players.find(p => p.symbol === this.gameState.currentPlayer);
-                if (!currentPlayer || currentPlayer.id !== this.socket.id) return;
+                if (!currentPlayer || currentPlayer.symbol !== this.playerSymbol) return;
                 
-                this.socket.emit('makeMove', { position: index });
+                this.makeMove(index);
+            }
+
+            makeMove(position) {
+                this.gameState.board[position] = this.gameState.currentPlayer;
+                this.gameState.lastUpdate = Date.now();
+                
+                // Check for winner
+                const winner = this.checkWinner();
+                if (winner) {
+                    this.gameState.winner = winner;
+                    this.gameState.gameActive = false;
+                } else {
+                    // Switch player
+                    this.gameState.currentPlayer = this.gameState.currentPlayer === 'X' ? 'O' : 'X';
+                }
+                
+                this.saveRooms();
+                this.updateGameState();
+            }
+
+            checkWinner() {
+                const board = this.gameState.board;
+                const lines = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+                    [0, 4, 8], [2, 4, 6] // Diagonals
+                ];
+                
+                for (const line of lines) {
+                    const [a, b, c] = line;
+                    if (board[a] && board[a] === board[b] && board[b] === board[c]) {
+                        this.gameState.winningLine = line;
+                        return board[a];
+                    }
+                }
+                
+                // Check for draw
+                if (board.every(cell => cell !== '')) {
+                    return 'draw';
+                }
+                
+                return null;
             }
 
             resetGame() {
-                if (this.socket) {
-                    this.socket.emit('resetGame');
-                }
+                if (!this.gameState) return;
+                
+                this.gameState.board = ['', '', '', '', '', '', '', '', '', '', ''];
+                this.gameState.currentPlayer = 'X';
+                this.gameState.winner = null;
+                this.gameState.winningLine = null;
+                this.gameState.gameActive = true;
+                this.gameState.startTime = Date.now();
+                this.gameState.lastUpdate = Date.now();
+                
+                this.saveRooms();
+                this.updateGameState();
             }
 
             backToLobby() {
@@ -725,8 +855,33 @@ date: 2025/4/13 19:30:00
                 const message = this.messageInput.value.trim();
                 if (!message) return;
                 
-                this.socket.emit('sendMessage', { message });
+                const messageData = {
+                    player: this.playerName,
+                    message: message,
+                    timestamp: Date.now()
+                };
+                
+                // Add message to room
+                if (this.gameState) {
+                    if (!this.gameState.messages) {
+                        this.gameState.messages = [];
+                    }
+                    this.gameState.messages.push(messageData);
+                    this.gameState.lastUpdate = Date.now();
+                    this.saveRooms();
+                    this.displayChatMessage(messageData);
+                }
+                
                 this.messageInput.value = '';
+            }
+
+            loadChatMessages() {
+                if (!this.gameState || !this.gameState.messages) return;
+                
+                this.chatMessages.innerHTML = '';
+                this.gameState.messages.forEach(message => {
+                    this.displayChatMessage(message);
+                });
             }
 
             displayChatMessage(messageData) {
@@ -745,7 +900,8 @@ date: 2025/4/13 19:30:00
             }
 
             showStats() {
-                this.socket.emit('getStats');
+                this.displayStats(this.stats);
+                this.statsModal.style.display = 'flex';
             }
 
             displayStats(stats) {
@@ -774,7 +930,7 @@ date: 2025/4/13 19:30:00
                             <div class="stat-label">Win Rate</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">${Math.round(stats.avgGameTime / 1000)}s</div>
+                            <div class="stat-value">${Math.round((stats.avgGameTime || 0) / 1000)}s</div>
                             <div class="stat-label">Avg Game Time</div>
                         </div>
                     </div>
@@ -786,19 +942,69 @@ date: 2025/4/13 19:30:00
             hideStats() {
                 this.statsModal.style.display = 'none';
             }
+
+            updateStats(result) {
+                if (result === 'win') {
+                    this.stats.wins++;
+                } else if (result === 'lose') {
+                    this.stats.losses++;
+                } else if (result === 'draw') {
+                    this.stats.draws++;
+                }
+                
+                this.stats.gamesPlayed++;
+                
+                const gameTime = Date.now() - this.gameState.startTime;
+                this.stats.avgGameTime = Math.round((this.stats.avgGameTime * (this.stats.gamesPlayed - 1) + gameTime) / this.stats.gamesPlayed);
+                
+                this.saveStats();
+            }
+
+            generateRoomCode() {
+                return 'room_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            saveRooms() {
+                // Use localStorage with timestamp for cross-browser sync
+                const data = {
+                    rooms: this.rooms,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('multiplayerRooms', JSON.stringify(data));
+            }
+
+            loadRooms() {
+                const saved = localStorage.getItem('multiplayerRooms');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    // Only load rooms if they're recent (within 5 minutes)
+                    if (Date.now() - data.timestamp < 300000) {
+                        return data.rooms || [];
+                    }
+                }
+                return [];
+            }
+
+            saveStats() {
+                localStorage.setItem('multiplayerStats', JSON.stringify(this.stats));
+            }
+
+            loadStats() {
+                const saved = localStorage.getItem('multiplayerStats');
+                return saved ? JSON.parse(saved) : {
+                    gamesPlayed: 0,
+                    wins: 0,
+                    losses: 0,
+                    draws: 0,
+                    avgGameTime: 0
+                };
+            }
         }
 
         // Initialize game when page loads
         let game;
         document.addEventListener('DOMContentLoaded', () => {
-            game = new MultiplayerGame();
-            
-            // Refresh rooms list periodically
-            setInterval(() => {
-                if (game && !game.currentRoom) {
-                    game.loadAvailableRooms();
-                }
-            }, 5000);
+            game = new ServerlessMultiplayerGame();
         });
     </script>
 </body>
